@@ -1,3 +1,8 @@
+String.prototype.replaceAll = function (find, replace) {
+    var str = this;
+    return str.replace(new RegExp(find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), replace);
+};
+
 (function($){
 
 	// create global app parameters...
@@ -12,7 +17,7 @@
 		currentRoom = null,
 
 		// server information
-		serverAddress = 'http://chat.worktoinspire.com:8080',
+		serverAddress = 'http://minecraft.dlgnetworks.com:8080',
 		serverDisplayName = 'WTI Server',
 		serverDisplayColor = '#1c5380',
 
@@ -128,9 +133,12 @@
 		// when the connection is made, the server emiting
 		// the 'connect' event
 		socket.on('connect', function(){
+			//check if there is a hashtag to join a specific room
+			var hash = location.hash.substr(1);
+			
 			// firing back the connect event to the server
 			// and sending the nickname for the connected client
-			socket.emit('connect', { nickname: nickname });
+			socket.emit('connect', { nickname: nickname, room: hash });
 		});
 		
 		// after the server created a client for us, the ready event
@@ -195,6 +203,7 @@
 			
 			// announce a welcome message
 			insertMessage(serverDisplayName, 'Welcome to the room: `' + data.room + '`... enjoy!', true, false, true);
+			insertMessage(serverDisplayName, 'The link for this room is (http://minecraft.dlgnetworks.com:8080/#'+data.room.replaceAll(" ", "_")+')', true, false, true);
 			$('.chat-clients ul').empty();
 			
 			// add the clients to the clients list
@@ -346,29 +355,6 @@
 			nickname = $.cookie('wti_chat_nickname');
 			connect();
 		}
-		
-		
-		/*
-		var nick;
-		if($.cookie('wti_chat_nickname') == undefined) {
-			nick = $('#nickname-popup .input input').val().trim();
-		} else {
-			nick = $.cookie('wti_chat_nickname');
-		
-		//var nick = $('#nickname-popup .input input').val().trim();
-		if(nick && nick.length <= NICK_MAX_LENGTH){
-			nickname = nick;
-			
-			//Build cookie
-			$.cookie('wti_chat_nickname', nickname, { expires: 1 });
-						
-			Avgrund.hide();
-			connect();
-		} else {
-			shake('#nickname-popup', '#nickname-popup .input input', 'tada', 'yellow');
-			$('#nickname-popup .input input').val('');
-		}
-		*/
 	}
 
 	// handle the client messages

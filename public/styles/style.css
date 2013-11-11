@@ -172,7 +172,7 @@ filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr=
 .chat .chat-bottom .chat-submit button:hover{background-color: rgb(255,255,255);box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 -2px 0 rgba(0,0,0,.1) inset, 0 0 10px rgba(255,255,255,.5) inset, 0 0 5px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.2);}
 .chat .chat-bottom .chat-submit button:active{box-shadow: 0 2px 3px rgba(0,0,0,.3) inset, 0 1px 0 rgba(255,255,255,.5);background-color: rgb(210,210,210);line-height:60px;}
 .chat .chat-bottom .chat-input{width:700px;}
-.chat .chat-bottom .chat-input input[type=text]{width:679px;font-family: 'Lato', sans-serif;display:block;padding:6px 10px;border:none;background:rgba(0, 0, 0, 0.02);box-shadow:none;color:#4D4D4D;font-size:16px;border-radius:0 0 0 15px;-webkit-transition:500ms;}
+.chat .chat-bottom .chat-input input[type=text]{width:679px;font-family: 'Lato', sans-serif;display:block;padding:9px 10px 12px;border:none;background:rgba(0, 0, 0, 0.02);box-shadow:none;color:#4D4D4D;font-size:16px;border-radius:0 0 0 15px;-webkit-transition:500ms;}
 .chat .chat-bottom .chat-input input[type=text]:focus{outline:none;}
 .chat .chat-bottom .chat-input input[type=text]::-webkit-input-placeholder{color:#ccc;font-style:italic;}
 .chat .chat-bottom .chat-input input[type=text].yellow::-webkit-input-placeholder{color:#eeb654;}

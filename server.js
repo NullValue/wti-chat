@@ -1,3 +1,8 @@
+String.prototype.replaceAll = function (find, replace) {
+    var str = this;
+    return str.replace(new RegExp(find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), replace);
+};
+
 // creating global parameters and start
 // listening to 'port', we are creating an express
 // server and then we are binding it with socket.io
@@ -121,8 +126,12 @@ function connect(socket, data){
 	// the client
 	socket.emit('ready', { clientId: data.clientId });
 	
-	// auto subscribe the client to the 'lobby'
-	subscribe(socket, { room: 'WTI Central' });
+	// dispatch to proper room
+	console.log('Room = '+data.room.replaceAll("_", " "));
+	if(data.room != '')
+		subscribe(socket, { room: data.room.replaceAll("_", " ")});
+	else
+		subscribe(socket, { room: 'WTI Central' });
 
 	// sends a list of all active rooms in the
 	// server
