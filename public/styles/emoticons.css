@@ -1,0 +1,106 @@
+span.emoticon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-bottom: -4px;
+}
+
+.emoticon-angry {
+  background-image: url("../images/emoticons/angry.png");
+}
+.emoticon-naughty {
+  background-image: url("../images/emoticons/naughty.png");
+}
+.emoticon-sick {
+  background-image: url("../images/emoticons/sick.png");
+}
+.emoticon-smile {
+  background-image: url("../images/emoticons/smile.png");
+}
+.emoticon-wink {
+  background-image: url("../images/emoticons/wink.png");
+}
+.emoticon-frown {
+  background-image: url("../images/emoticons/frown.png");
+}
+.emoticon-ambivalent {
+  background-image: url("../images/emoticons/ambivalent.png");
+}
+.emoticon-slant {
+  background-image: url("../images/emoticons/slant.png");
+}
+.emoticon-gasp {
+  background-image: url("../images/emoticons/gasp.png");
+}
+.emoticon-laugh {
+  background-image: url("../images/emoticons/laugh.png");
+}
+.emoticon-kiss {
+  background-image: url("../images/emoticons/kiss.png");
+}
+.emoticon-yuck {
+  background-image: url("../images/emoticons/yuck.png");
+}
+.emoticon-yum {
+  background-image: url("../images/emoticons/yum.png");
+}
+.emoticon-grin {
+  background-image: url("../images/emoticons/grin.png");
+}
+.emoticon-sarcastic {
+  background-image: url("../images/emoticons/sarcastic.png");
+}
+.emoticon-cry {
+  background-image: url("../images/emoticons/cry.png");
+}
+.emoticon-cool {
+  background-image: url("../images/emoticons/cool.png");
+}
+.emoticon-nerd {
+  background-image: url("../images/emoticons/nerd.png");
+}
+.emoticon-innocent {
+  background-image: url("../images/emoticons/innocent.png");
+}
+.emoticon-sealed {
+  background-image: url("../images/emoticons/sealed.png");
+}
+.emoticon-footinmouth {
+  background-image: url("../images/emoticons/footinmouth.png");
+}
+.emoticon-embarrassed {
+  background-image: url("../images/emoticons/embarrassed.png");
+}
+.emoticon-crazy {
+  background-image: url("../images/emoticons/crazy.png");
+}
+.emoticon-confused {
+  background-image: url("../images/emoticons/confused.png");
+}
+.emoticon-moneymouth {
+  background-image: url("../images/emoticons/moneymouth.png");
+}
+.emoticon-heart {
+  background-image: url("../images/emoticons/heart.png");
+}
+.emoticon-thumbsup {
+  background-image: url("../images/emoticons/thumbsup.png");
+}
+.emoticon-thumbsdown {
+  background-image: url("../images/emoticons/thumbsdown.png");
+}
+.emoticon-not-amused {
+  background-image: url("../images/emoticons/not-amused.png");
+}
+.emoticon-mini-smile {
+  background-image: url("../images/emoticons/mini-smile.png");
+}
+.emoticon-mini-frown {
+  background-image: url("../images/emoticons/mini-frown.png");
+}
+.emoticon-content {
+  background-image: url("../images/emoticons/content.png");
+}
+.emoticon-hearteyes {
+  background-image: url("../images/emoticons/hearteyes.png");
+}
