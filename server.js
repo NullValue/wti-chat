@@ -135,6 +135,9 @@ function connect(socket, data){
 
 	// sends a list of all active rooms in the
 	// server
+
+	//socket.emit('roomslist', {rooms: getRoomsWithCount() });
+	broadcastUpdate({type: 'roomCount', data: getRoomsWithCount()});
 	socket.emit('roomslist', { rooms: getRooms() });
 }
 
@@ -191,19 +194,20 @@ function subscribe(socket, data){
 
 	// subscribe the client to the room
 	socket.join(data.room);
-	
-	
 
 	// update all other clients about the online
 	// presence
 	updatePresence(data.room, socket, 'online');
+
+	// broadcast the new user counts
+	broadcastUpdate({type: 'roomCount', data:getRoomsWithCount()});
 
 	// send to the client a list of all subscribed clients
 	// in this room
 	socket.emit('roomclients', { room: data.room, clients: getClientsInRoom(socket.id, data.room) });
 	
 	// send last 100 message to client
-	console.log("Room ("+data.room+") History Length = " + history[data.room].length);
+	//console.log("Room ("+data.room+") History Length = " + history[data.room].length);
 	if(history[data.room].length > 0){
 		sendHistory(data.room, socket);
 	}
@@ -220,6 +224,9 @@ function unsubscribe(socket, data){
 	// remove the client from socket.io room
 	socket.leave(data.room);
 
+	// broadcast the new user counts
+	broadcastUpdate({type: 'roomCount', data:getRoomsWithCount()});
+
 	// if this client was the only one in that room
 	// we are updating all clients about that the
 	// room is destroyed
@@ -235,6 +242,18 @@ function unsubscribe(socket, data){
 // room names
 function getRooms(){
 	return Object.keys(io.sockets.manager.rooms);
+}
+
+function getRoomsWithCount(){
+	var rooms = getRooms();
+	var roomsCount = rooms.length;
+	var roomData = Array();
+
+	for(i=0; i<=roomsCount; i++){
+		if(rooms[i] != '' && rooms[i] != undefined)
+			roomData.push({room: rooms[i], count:countClientsInRoom(rooms[i])})
+	}
+	return roomData;
 }
 
 // get array of clients in a room
@@ -281,7 +300,8 @@ function updatePresence(room, socket, state){
 	// by using 'socket.broadcast' we can send/emit
 	// a message/event to all other clients except
 	// the sender himself
-	socket.broadcast.to(room).emit('presence', { client: chatClients[socket.id], state: state, room: room });
+	socket.broadcast.emit('presence', { client: chatClients[socket.id], state: state, room: room });
+	//socket.broadcast.to(room).emit('presence', { client: chatClients[socket.id], state: state, room: room });
 }
 
 // sent the last historyCnt worth of history
@@ -291,6 +311,11 @@ function sendHistory(room, socket){
 	// room name so we are clearing it
 		
 	socket.emit('history', JSON.stringify({data: history[room]}));	
+}
+
+// broadcast updates to all users
+function broadcastUpdate(data){
+	io.sockets.emit('status', data);
 }
 
 // unique id generator

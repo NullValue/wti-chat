@@ -13,6 +13,9 @@ String.prototype.replaceAll = function (find, replace) {
 		clientId = null,
 		nickname = null,
 
+		//room meta data
+		roomMeta = Array(),
+
 		// holds the current room we are in
 		currentRoom = null,
 
@@ -121,8 +124,33 @@ String.prototype.replaceAll = function (find, replace) {
 			}
 		});
 		
-		$('.chat-clients .title-button').on('click', function(){
+		$('.logout').on('click', function(){
 			logout();
+		});
+		
+		$('.settings').on('click', function(){
+			var nickname = $.cookie('wti_chat_nickname');
+			var sndChat = ($.cookie('wti_chat_sndChat') == undefined) ? true : $.cookie('wti_chat_sndChat') == 'true' ? true : false;
+			var sndJoin = ($.cookie('wti_chat_sndJoin') == undefined) ? true : $.cookie('wti_chat_sndJoin') == 'true' ? true : false;
+			
+			$('#settings-popup .input input').val($.cookie('wti_chat_nickname'));
+			$('.sndChat').prop('checked', sndChat);
+			$('.sndJoin').prop('checked', sndJoin );
+			
+			Avgrund.show('#settings-popup');
+			window.setTimeout(function(){
+				$('#nickname-popup .input input').focus();
+			},100);
+		});
+		
+		$('.settings-save').on('click', function(){
+			$.cookie('wti_chat_sndChat', $('.sndChat').prop('checked'));
+		 	$.cookie('wti_chat_sndJoin', $('.sndJoin').prop('checked'));
+		 	if($.cookie('wti_chat_nickname') != $('#settings-popup .input input').val()){
+		 		$.cookie('wti_chat_nickname', $('#settings-popup .input input').val());
+		 		location.reload();
+		 	}
+		 	Avgrund.hide();
 		});
 	}
 
@@ -178,7 +206,8 @@ String.prototype.replaceAll = function (find, replace) {
 			insertMessage(nickname, message, true, false, false);
 			
 			// play sound file
-			sndMessage.play();
+			if($.cookie('wti_chat_sndChat') == 'true')
+				sndMessage.play();
 			
 		});
 		
@@ -203,7 +232,7 @@ String.prototype.replaceAll = function (find, replace) {
 			
 			// announce a welcome message
 			insertMessage(serverDisplayName, 'Welcome to the room: `' + data.room + '`... enjoy!', true, false, true);
-			insertMessage(serverDisplayName, 'The link for this room is (http://minecraft.dlgnetworks.com:8080/#'+data.room.replaceAll(" ", "_")+')', true, false, true);
+			//insertMessage(serverDisplayName, 'The link for this room is (http://minecraft.dlgnetworks.com:8080/#'+data.room.replaceAll(" ", "_")+')', true, false, true);
 			$('.chat-clients ul').empty();
 			
 			// add the clients to the clients list
@@ -238,8 +267,20 @@ String.prototype.replaceAll = function (find, replace) {
 		socket.on('presence', function(data){
 			if(data.state == 'online'){
 				addClient(data.client, true);
+				roomMeta[data.room]['users'] = roomMeta[data.room]['users'] + 1
 			} else if(data.state == 'offline'){
 				removeClient(data.client, true);
+				roomMeta[data.room]['users'] = roomMeta[data.room]['users'] - 1
+			}
+		});
+
+		socket.on('status', function(data){
+			console.log('Got '+data.type+' packet');
+
+			if(data.type =='roomCount'){
+				for (var i=0; i < data.data.length; i++) {
+					$('li[data-roomid="'+data.data[i].room+'"] .icon').badger(parseInt(data.data[i].count));
+				}
 			}
 		});
 	}
@@ -252,6 +293,10 @@ String.prototype.replaceAll = function (find, replace) {
 
 		// check if the room is not already in the list
 		if($('.chat-rooms ul li[data-roomId="' + name + '"]').length == 0){
+
+			// create the rooms meta fields
+			roomMeta[name] = Array();
+
 			$.tmpl(tmplt.room, { room: name }).appendTo('.chat-rooms ul');
 			// if announce is true, show a message about this room
 			if(announce){
@@ -263,6 +308,10 @@ String.prototype.replaceAll = function (find, replace) {
 	// remove a room from the rooms list
 	function removeRoom(name, announce){
 		$('.chat-rooms ul li[data-roomId="' + name + '"]').remove();
+
+		// delete the room from the meta storage
+		delete roomMeta[name];
+
 		// if announce is true, show a message about this room
 		if(announce){
 			insertMessage(serverDisplayName, 'The room `' + name + '` destroyed...', true, false, true);
@@ -284,7 +333,7 @@ String.prototype.replaceAll = function (find, replace) {
 		}
 		$html.appendTo('.chat-clients ul')
 		
-		if(!isMe){
+		if(!isMe && ($.cookie('wti_chat_sndJoin') == 'true')){
 			sndSignon.play();
 		}
 	}
