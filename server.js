@@ -7,14 +7,21 @@ String.prototype.replaceAll = function (find, replace) {
 // listening to 'port', we are creating an express
 // server and then we are binding it with socket.io
 var express		= require('express'),
-	 app			= express(),
-	 server		= require('http').createServer(app),
-	 io			= require('socket.io').listen(server),
-	 port			= 8080,
+	app			= express(),
+	server		= require('http').createServer(app),
+	io			= require('socket.io').listen(server),
+	port		= 8080,
+	sys			= require('sys'),
+	util		= require('util'),
+	emoticons	= require('./plugins/emoticons.js'),
+	links		= require('./plugins/links.js'),
+
+
+	sVersion		= '1.3',
 
     // hash object to save clients data,
     // { socketid: { clientid, nickname }, socketid: { ... } }
-    chatClients = new Object(),
+    chatClients	= new Object(),
     
     //history    
     historyCnt	= -50,
@@ -64,7 +71,7 @@ app.get('/', function (req, res) {
 // log level 2 we wont see all the heartbits
 // of each socket but only the handshakes and
 // disconnections
-io.set('log level', 2);
+io.set('log level', 1);
 
 // setting the transports by order, if some client
 // is not supporting 'websockets' then the server will
@@ -77,6 +84,7 @@ io.set('transports', [ 'websocket', 'xhr-polling' ]);
 // and each event is emited in the client.
 // I created a function to handle each event
 io.sockets.on('connection', function(socket){
+	console.log(util.format("New connection from: %s", socket.handshake.address.address));
 	
 	// after connection, the client sends us the 
 	// nickname through the connect event
@@ -111,34 +119,42 @@ io.sockets.on('connection', function(socket){
 });
 
 // create a client for the socket
+// packet {nickname, room, version}
 function connect(socket, data){
-	//generate clientId
-	data.clientId = generateId();
 
-	// save the client to the hash object for
-	// quick access, we can save this data on
-	// the socket with 'socket.set(key, value)'
-	// but the only way to pull it back will be
-	// async
-	chatClients[socket.id] = data;
-
-	// now the client objtec is ready, update
-	// the client
-	socket.emit('ready', { clientId: data.clientId });
-	
-	// dispatch to proper room
-	console.log('Room = '+data.room.replaceAll("_", " "));
-	if(data.room != '')
-		subscribe(socket, { room: data.room.replaceAll("_", " ")});
+	// Do Version check
+	if(data.version == undefined || data.version != sVersion)
+	{
+		console.log(util.format('[Error] User "%s" is using an outdated client v%s', data.nickname, data.version));
+		sendRefresh();
+		//disconnect(socket);
+	}
 	else
+	{
+
+		//generate clientId
+		data.clientId = generateId();
+
+		// save the client to the hash object for
+		// quick access, we can save this data on
+		// the socket with 'socket.set(key, value)'
+		// but the only way to pull it back will be
+		// async
+		chatClients[socket.id] = data;
+
+		// now the client object is ready, update
+		// the client
+		socket.emit('ready', { clientId: data.clientId });
+		
+		//connect to the default room
 		subscribe(socket, { room: 'WTI Central' });
 
-	// sends a list of all active rooms in the
-	// server
+		// sends a list of all active rooms in the server
 
-	//socket.emit('roomslist', {rooms: getRoomsWithCount() });
-	broadcastUpdate({type: 'roomCount', data: getRoomsWithCount()});
-	socket.emit('roomslist', { rooms: getRooms() });
+		//socket.emit('roomslist', {rooms: getRoomsWithCount() });
+		broadcastUpdate({type: 'roomCount', data: getRoomsWithCount()});
+		socket.emit('roomslist', { rooms: getRooms() });
+	}
 }
 
 // when a client disconnect, unsubscribe him from
@@ -162,20 +178,33 @@ function disconnect(socket){
 // receive chat message from a client and
 // send it to the relevant room
 function chatmessage(socket, data){
-	// by using 'socket.broadcast' we can send/emit
-	// a message/event to all other clients except
-	// the sender himself
-	socket.broadcast.to(data.room).emit('chatmessage', { client: chatClients[socket.id], message: data.message, room: data.room });
-	
-	// save to history for this room
-	var hMessage = {
-		nickname: chatClients[socket.id].nickname,
-		message: data.message,
-		timeStamp: getTime()
-	};
-	history[data.room].push(hMessage);
-	history[data.room] = history[data.room].slice(historyCnt);
-	console.log("Room ("+data.room+") History Length = "+ history[data.room].length);
+
+	// User commands
+	if(data.message.indexOf('/') == 0)
+	{
+		processCommand(socket, data);
+	}
+    else
+    {
+    	//run formatting on the message
+    	data.message = emoticons.applyEmoticons(data.message);
+    	data.message = links.addLinks(data.message);
+
+
+        // by using 'socket.broadcast' we can send/emit
+		// a message/event to all other clients except
+		// the sender himself
+		io.sockets.in(data.room).emit('chatmessage', { client: chatClients[socket.id], message: data.message, room: data.room });
+		
+		// save to history for this room
+		var hMessage = {
+			nickname: chatClients[socket.id].nickname,
+			message: data.message,
+			timeStamp: getTime()
+		};
+		history[data.room].push(hMessage);
+		history[data.room] = history[data.room].slice(historyCnt);
+	}
 }
 
 // subscribe a client to a room
@@ -194,24 +223,22 @@ function subscribe(socket, data){
 
 	// subscribe the client to the room
 	socket.join(data.room);
-
 	// update all other clients about the online
 	// presence
 	updatePresence(data.room, socket, 'online');
-
 	// broadcast the new user counts
 	broadcastUpdate({type: 'roomCount', data:getRoomsWithCount()});
-
 	// send to the client a list of all subscribed clients
 	// in this room
 	socket.emit('roomclients', { room: data.room, clients: getClientsInRoom(socket.id, data.room) });
-	
 	// send last 100 message to client
 	//console.log("Room ("+data.room+") History Length = " + history[data.room].length);
 	if(history[data.room].length > 0){
 		sendHistory(data.room, socket);
 	}
 }
+
+
 
 // unsubscribe a client from a room, this can be
 // occured when a client disconnected from the server
@@ -297,6 +324,9 @@ function updatePresence(room, socket, state){
 	// room name so we are clearing it
 	room = room.replace('/','');
 
+	//update the local cache
+	chatClients[socket.id].room = room;
+
 	// by using 'socket.broadcast' we can send/emit
 	// a message/event to all other clients except
 	// the sender himself
@@ -318,6 +348,10 @@ function broadcastUpdate(data){
 	io.sockets.emit('status', data);
 }
 
+function sendRefresh(){
+	io.sockets.emit('refresh');
+}
+
 // unique id generator
 function generateId(){
 	var S4 = function () {
@@ -333,6 +367,14 @@ function getTime(){
 			(date.getMinutes() < 10 ? '0' + date.getMinutes().toString() : date.getMinutes());
 }
 
+function processCommand(socket, data)
+{
+	if(data.message.indexOf('//') == 0)
+		console.log(util.format('[Warn] User "%s" used admin command "%s"', chatClients[socket.id].nickname, data.message));
+    else if(data.message.indexOf('/') == 0)
+		console.log(util.format('[Warn] User "%s" used user command "%s"', chatClients[socket.id].nickname, data.message));
+}
+
 // show a message in console
 console.log('Chat server is running and listening to port %d...', port);
 
@@ -341,3 +383,41 @@ for (var i=0; i<sRooms.length; i++){
 	console.log('--Creating room: ' + sRooms[i]);
 	io.sockets.manager.onJoin('-1', sRooms[i]);
 }
+
+function listUsers() {
+	console.log('------------User List------------');
+	io.sockets.clients().forEach(function (socket) {
+		console.log('SocketId: '+socket.id);
+		console.log('ClientId: '+chatClients[socket.id].clientId);
+		console.log('Nickname: '+chatClients[socket.id].nickname);
+		console.log('IP Addr : '+socket.handshake.address.address);
+		console.log('Chatroom: '+chatClients[socket.id].room);
+		console.log('---------------------------------');
+	});
+	console.log("Total Users: "+io.sockets.clients().length);
+}
+
+//Create the shell 
+
+var stdin = process.openStdin();
+
+var commands = {
+	'pwd': function () { console.log(process.cwd()); },
+	'users': function () { listUsers(); },
+	'refresh': function() { sendRefresh(); },
+	'update': function(message) { io.sockets.emit('servermessage', { message: message });}
+};
+
+stdin.on('data', function (input) {
+  var matches = input.toString().match(/(\w+)(.*)/);
+  var command = matches[1].toLowerCase();
+  var args = matches[2].trim();
+
+  try{
+  	commands[command](args);
+  }
+  catch (error){
+  	console.log('Invalid command.');
+  	console.log(error);
+  }
+});

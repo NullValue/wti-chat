@@ -9,7 +9,6 @@
       <link href="/styles/avgrund.css" rel="stylesheet" type="text/css" />
       <link href="/styles/emoticons.css" rel="stylesheet" type="text/css" />
       <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-      <link href="/styles/badger.min.css" rel="stylesheet"  type="text/css" />
    </head>
    <body>
       <div class="avgrund-contents">
@@ -24,6 +23,7 @@
                </div>
                <div class="cf chat-top">
                   <div class="fl chat-left">
+                     <div class="fl chat-room-header">Current Room: <span class="chat-room-header-name"></span></div>
                      <div class="chat-messages">
                         <ul></ul>
                      </div>
@@ -89,27 +89,5 @@
       <script type="text/javascript" src="/scripts/avgrund.js"></script>
       <script type="text/javascript" src="/scripts/chat.io.js"></script>
       <script type="text/javascript" src="/scripts/badger.js"></script>
-      <script type="text/javascript">
-         $('h1 sup').on('click', function () {
-         	if($('.chat').hasClass('bounceOutRight')){
-         		$('.chat').removeClass('bounceOutRight');
-         		$('.chat').addClass('bounceInLeft');
-         		
-         		$('.info').removeClass('bounceInLeft');
-         		$('.info').addClass('bounceOutRight');
-         		
-         		window.setTimeout(function(){
-         			$('.chat').removeClass('bounceInLeft');
-         		}, 1500);
-         	} else {
-         		$('.chat').removeClass('bounceInLeft');
-         		$('.chat').addClass('bounceOutRight');
-         		
-         		$('.info').removeClass('bounceOutRight');
-         		$('.info').addClass('bounceInLeft');
-         	}
-         	
-         });
-      </script>
    </body>
 </html>

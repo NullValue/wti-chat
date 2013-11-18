@@ -13,6 +13,8 @@ String.prototype.replaceAll = function (find, replace) {
 		clientId = null,
 		nickname = null,
 
+		version = '1.3',
+
 		//room meta data
 		roomMeta = Array(),
 
@@ -41,7 +43,7 @@ String.prototype.replaceAll = function (find, replace) {
 			].join(""),
 			message: [
 				'<li class="cf">',
-					'<div class="fl sender">${sender}: </div><div class="fl text">${text}</div><div class="fr time">${time}</div>',
+					'<div class="fl sender">${sender}: </div><div class="fl text">{{html text}}</div><div class="fr time">${time}</div>',
 				'</li>'
 			].join("")
 		};
@@ -166,7 +168,7 @@ String.prototype.replaceAll = function (find, replace) {
 			
 			// firing back the connect event to the server
 			// and sending the nickname for the connected client
-			socket.emit('connect', { nickname: nickname, room: hash });
+			socket.emit('connect', { nickname: nickname, room: hash, version: version });
 		});
 		
 		// after the server created a client for us, the ready event
@@ -203,8 +205,11 @@ String.prototype.replaceAll = function (find, replace) {
 			var message = data.message;
 			
 			//display the message in the chat window
-			insertMessage(nickname, message, true, false, false);
-			
+			if(data.client.clientId == clientId)
+				insertMessage(nickname, message, true, true, false);
+			else
+				insertMessage(nickname, message, true, false, false);
+
 			// play sound file
 			if($.cookie('wti_chat_sndChat') == 'true')
 				sndMessage.play();
@@ -218,6 +223,11 @@ String.prototype.replaceAll = function (find, replace) {
 			for (var i=0; i < json.data.length; i++) {
 				insertMessage(json.data[i].nickname, json.data[i].message, true, false, false, json.data[i].timeStamp)
 			}
+		});
+
+		//Handle Server broadcasts
+		socket.on('servermessage', function(data){
+			insertMessage(serverDisplayName, data.message, true, false, true)
 		});
 		
 		// when we subscribes to a room, the server sends a list
@@ -283,6 +293,15 @@ String.prototype.replaceAll = function (find, replace) {
 				}
 			}
 		});
+
+		socket.on('refresh', function () {
+			location.reload();
+		});
+
+		socket.on('disconnect', function () {
+			insertMessage(serverDisplayName, 'Connection to the server lost! Please stand by.....', true, false, true);
+		});
+
 	}
 
 	// add a room to the rooms list, socket.io may add
@@ -379,6 +398,7 @@ String.prototype.replaceAll = function (find, replace) {
 		currentRoom = room;
 		$('.chat-rooms ul li.selected').removeClass('selected');
 		$('.chat-rooms ul li[data-roomId="' + room + '"]').addClass('selected');
+		$('.chat-room-header-name').html(room);
 		// clear past chat log from previous room
 		$('.chat-messages ul li').remove();
 	}
@@ -416,8 +436,6 @@ String.prototype.replaceAll = function (find, replace) {
 			// send the message to the server with the room name
 			socket.emit('chatmessage', { message: message, room: currentRoom });
 			
-			// display the message in the chat window
-			insertMessage(nickname, message, true, true);
 			$('.chat-input input').val('');
 		} else {
 			shake('.chat', '.chat input', 'wobble', 'yellow');
@@ -427,6 +445,10 @@ String.prototype.replaceAll = function (find, replace) {
 	// insert a message to the chat window, this function can be
 	// called with some flags
 	function insertMessage(sender, message, showTime, isMe, isServer, timeStamp){
+
+		//apply formatting to message
+		//message = injectEmoticon(message);
+
 		var $html = $.tmpl(tmplt.message, {
 			sender: sender,
 			text: message,
@@ -434,8 +456,6 @@ String.prototype.replaceAll = function (find, replace) {
 			time: showTime ? timeStamp ? timeStamp : getTime() : ''
 		});
 		
-		//Emticon changing
-		$html = injectEmoticon($html);
 
 		// if isMe is true, mark this message so we can
 		// know that this is our message in the chat window
@@ -537,7 +557,7 @@ String.prototype.replaceAll = function (find, replace) {
 		var emoticHTML = "<span class='emoticon $emotic'></span>";
 		
 		for(var emotic in patterns) {
-			html[0].innerHTML = html[0].innerHTML.replace(patterns[emotic],emoticHTML.replace("$emotic", "emoticon-" + emotic));
+			html = html.replace(patterns[emotic],emoticHTML.replace("$emotic", "emoticon-" + emotic));
 		}
 		
 		return html;
